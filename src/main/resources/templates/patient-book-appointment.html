@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}"> <style>
+    /* --- Theme Styles --- */
+    body {
+        background-color: #ffe6f2; /* Light pink background */
+        padding-top: 76px; /* Adjust padding for fixed-top navbar */
+    }
+    /* Style for the top navbar */
+    .navbar-custom {
+        background: linear-gradient(45deg, #ff85a2, #ff4d79);
+    }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+        color: #ffffff !important;
+    }
+    .navbar-custom .btn-link.nav-link {
+        text-decoration: none;
+        box-shadow: none;
+        background-color: transparent;
+        border: none;
+    }
+    .navbar-custom .btn-link.nav-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Style for the main content wrapper */
+    .content-wrapper {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        background-color: #FFF0F5; /* Very light pink background (LavenderBlush) */
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    /* Style main heading */
+    .content-wrapper h2 {
+        color: #ff4d79; /* Use a theme color for the heading */
+        margin-bottom: 1.5rem;
+    }
+    .content-wrapper h2 i { /* Icon spacing in heading */
+        margin-right: 0.5rem;
+    }
+
+    /* Form Enhancements */
+    .form-label {
+        font-weight: 500; /* Slightly bolder labels */
+    }
+    .form-select:disabled, .form-control:disabled {
+        background-color: #f8f9fa; /* Lighter background for disabled fields */
+    }
+
+    /* Slot Styling */
+    .slot-button {
+        margin: 5px;
+        transition: all 0.2s ease-in-out;
+        border-color: #ff85a2; /* Use theme color for border */
+        color: #ff4d79; /* Use theme color for text */
+    }
+    .slot-button:hover {
+        background-color: rgba(255, 133, 162, 0.15); /* Light pink hover */
+        border-color: #ff4d79;
+    }
+    .selected-slot {
+        background-color: #ff4d79; /* Use theme pink for selected */
+        color: white;
+        border-color: #ff4d79;
+    }
+    #slotsContainer {
+        background-color: #fff5f8; /* Very pale pink background for contrast */
+        border-color: #ffc1d9 !important; /* Pink border, override default */
+        min-height: 100px; /* Ensure minimum height */
+    }
+
+    /* Button Transitions */
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+    .btn i { /* Style for icons within buttons */
+        margin-right: 0.4rem;
+        vertical-align: text-bottom;
+    }
+    .btn .bi-arrow-left-circle-fill, .btn .bi-check-circle-fill { /* Specific icons */
+        font-size: 1.1em;
+    }
+
+    /* Alert styling */
+    .alert {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        /* Structure for icon will be handled by JS if needed, just general style here */
+    }
+    /* Add specific styling for JS-added icons if booking.js is modified */
+    .alert i {
+        margin-right: 0.5rem;
+        font-size: 1.2em;
+    }
+    .alert > div { /* Assuming JS adds a div for text */
+        display: inline-block;
+    }
+
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/patient/dashboard}">Patient Dashboard</a>
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item" sec:authorize="isAuthenticated()">
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-link nav-link">Logout (<span sec:authentication="principal.username">User</span>)</button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container content-wrapper">
+    <h2><i class="bi bi-calendar-plus"></i> Book a New Appointment</h2>
+    <hr/>
+
+    <div id="bookingMessage" class="alert d-none" role="alert"></div>
+
+    <form id="bookingForm">
+        <div class="mb-3">
+            <label for="specialization" class="form-label">Select Specialization:</label>
+            <select class="form-select" id="specialization" name="specialization" required>
+                <option value="" selected disabled>-- Choose Specialization --</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Neurology">Neurology</option>
+                <option value="Orthopedics">Orthopedics</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="General Physician">General Physician</option>
+            </select>
+            <div class="invalid-feedback">Please select a specialization.</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="doctor" class="form-label">Select Doctor:</label>
+            <select class="form-select" id="doctor" name="doctorId" required disabled>
+                <option value="" selected disabled>-- Select Specialization First --</option>
+            </select>
+            <div class="invalid-feedback">Please select a doctor.</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="appointmentDate" class="form-label">Select Date:</label>
+            <input type="date" class="form-control" id="appointmentDate" name="appointmentDate" required disabled/>
+            <div class="invalid-feedback">Please select a date.</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Available Slots:</label>
+            <div id="slotsContainer" class="border p-3 rounded min-vh-10">
+                <p id="slotsPlaceholder" class="text-muted">Please select a doctor and date first.</p>
+            </div>
+            <input type="hidden" id="selectedSlotTime" name="selectedSlotTime" />
+            <div id="slotSelectionError" class="text-danger d-none mt-1">Please select a time slot.</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="reason" class="form-label">Reason for Visit (Optional):</label>
+            <textarea class="form-control" id="reason" name="reason" rows="3"></textarea>
+        </div>
+
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mt-4"> <a th:href="@{/patient/dashboard}" class="btn btn-secondary order-sm-1">
+            <i class="bi bi-arrow-left-circle-fill"></i>Back to Dashboard
+        </a>
+            <button type="button" id="bookBtn" class="btn btn-primary order-sm-2" disabled>
+                <i class="bi bi-check-circle-fill"></i>Book Appointment
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/booking.js}"></script>
+</body>
+</html>

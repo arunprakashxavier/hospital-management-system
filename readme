@@ -1,0 +1,153 @@
+# Hospital Management System (HMS)
+
+A web application built with Spring Boot and Thymeleaf for managing patient information, doctor schedules, appointments, and medications within a healthcare setting.
+
+## Current Status (As of 2025-04-02)
+
+The application has a functional core including user registration, role-based login (Patient, Doctor, Admin), basic appointment booking and viewing, medication assignment (API) and viewing (Patient UI), and profile viewing/editing capabilities (via modals). Key backend logic is in place, secured with Spring Security using a hybrid approach (web sessions + JWT for APIs). Unit tests have been created for several core service components.
+
+## Features Implemented
+
+* **User Roles:** Patient, Doctor, Admin roles with distinct entities.
+* **Database:** MySQL integration using Spring Data JPA / Hibernate (`ddl-auto=update`).
+* **Registration:**
+    * Patient self-registration via web form (uses API).
+    * Doctor registration via Admin-only API (`POST /api/admin/doctors/register`).
+
+* **Authentication:**
+    * Separate web login pages for Patient (`/patient/login`) and Doctor (`/doctor/login`) using session-based authentication.
+    * Separate web login page for Admin (`/admin/login`) which uses API calls and stores JWT.
+    * API login endpoints (`/api/auth/**`) for all roles returning JWT Bearer tokens.
+    * JWT generation and validation for securing API endpoints.
+    * Password encoding using BCrypt.
+
+* **Authorization:**
+    * Role-based access control using `@PreAuthorize` annotations and `SecurityConfig`.
+    * Admin-only restrictions for certain APIs/pages.
+
+* **Appointment Scheduling:**
+    * Backend API to find Doctors by Specialization.
+    * Backend API to get available time slots for a Doctor on a specific date (considers working hours and existing appointments).
+    * Frontend UI for Patients to book appointments (select specialization -> doctor -> date -> slot -> submit via API).
+    * Backend API (`POST /api/appointments/book`) for Patients to book appointments (status: PENDING).
+
+* **Appointment Viewing & Management:**
+    * Frontend pages for Patients (`/patient/appointments`) and Doctors (`/doctor/appointments`) to view their respective appointments.
+    * Frontend action buttons (Approve, Reject, Cancel, Complete) on Doctor's view, calling backend APIs via JavaScript.
+    * Frontend action button (Cancel) on Patient's view, calling backend API via JavaScript.
+    * Backend APIs (`PUT /api/appointments/{id}/action`) for status changes (includes basic permission checks via `@PreAuthorize`, **pending full ownership validation in Service layer**).
+
+* **Medication Management:**
+    * Backend API (`POST /api/appointments/{id}/medications`) for Doctors/Admins to assign medications to a *completed* appointment.
+    * Frontend modal UI for Doctors to assign medications after completing an appointment via the web interface.
+    * Backend API (`GET /api/patient/medications`, `GET /api/appointments/{id}/medications`) to retrieve medication lists.
+    * Frontend page (`/patient/medications`) for patients to view their prescribed medications.
+
+* **Profile Management:**
+    * Backend APIs (`GET /api/profile/*`, `PUT /api/profile/*`, `PUT /api/profile/change-password`) for viewing/updating profile details and changing passwords for logged-in patients and doctors.
+    * Frontend pages (`/patient/profile`, `/doctor/profile`) displaying profile information.
+    * Frontend modals for editing profile information and changing passwords, interacting with the backend APIs.
+
+* **API Documentation:** Basic Swagger/OpenAPI setup accessible at `/swagger-ui.html`.
+* **Error Handling:** Global exception handler for consistent API error responses.
+* **Unit Testing:** Foundational unit tests created for `PatientService`, `DoctorService`, `AppointmentService` (partial), `CustomUserDetailsService`, `JwtTokenProvider` using JUnit 5 & Mockito.
+
+## Features NOT Implemented / TODOs
+
+* **Critical:** Implement detailed **Ownership Validation** in `AppointmentService` methods (`approve`, `reject`, `cancel`, `complete`, `assignMedications`, `getMedicationsForAppointment`) to ensure users can only modify appointments they are directly associated with (beyond just role checks).
+* **Admin Web UI:** Create the frontend page (`admin-register-doctor.html`) and JS logic for Admins to register doctors via the web interface (currently API-only via Postman). Create other admin views (list patients, list doctors).
+* **Frontend Data Population:** Populate dashboard pages (`patient-dashboard.html`, `doctor-dashboard.html`) with actual summary data (e.g., count of upcoming appointments).
+* **Backend Refinements:**
+    * Review `CascadeType.ALL` on Appointment lists in `Patient` and `Doctor` entities based on data retention needs.
+    * Add explicit `@PreAuthorize("hasRole('ADMIN')")` to `AdminController` methods.
+    * Consider using MapStruct for more complex DTO/Entity mapping.
+    * Implement secure storage/retrieval for `jwt.secret` (use environment variables or config server).
+    * Configure Swagger UI to support JWT Bearer Token authorization input.
+* **Frontend Refinements:**
+    * Improve UI/UX (e.g., better feedback messages, loading indicators, potentially replace `prompt()` in doctor complete flow with a modal).
+    * Enhance CSS styling further.
+    * Add more comprehensive client-side validation.
+* **Unit Testing:** Complete tests for all methods in `AppointmentService`. Add Integration Tests for Repositories and Controllers (`@DataJpaTest`, `@WebMvcTest`).
+
+## Technology Stack
+
+* Java 17
+* Spring Boot 3.4.4
+* Spring Security 6
+* Spring Data JPA / Hibernate
+* MySQL Database
+* Thymeleaf (Server-side templating)
+* HTML, CSS, JavaScript
+* Bootstrap 5
+* Maven (Build Tool)
+* JUnit 5 / Mockito / AssertJ (Testing)
+* JJWt (JSON Web Tokens)
+* SpringDoc OpenAPI (Swagger UI)
+
+## Setup & Configuration
+
+**Prerequisites:**
+
+* JDK 17 or later
+* Maven 3.6+
+* MySQL Server (running locally or accessible)
+
+**Database:**
+
+1.  Ensure MySQL server is running.
+2.  The application uses the database name `healthcare_db`.
+3.  Configure your MySQL username and password in `src/main/resources/application.properties`:
+    ```properties
+    spring.datasource.username=your_mysql_username
+    spring.datasource.password=your_mysql_password
+    ```
+4.  The setting `spring.jpa.hibernate.ddl-auto=update` will attempt to create or update tables automatically on startup (suitable for development).
+
+**JWT Secret:**
+
+1.  **IMPORTANT:** The default JWT secret in `application.properties` (`jwt.secret`) is **insecure** and only a placeholder.
+2.  Generate a strong, Base64-encoded secret key (at least 256 bits, preferably 512 bits for HS512). You can use online generators or command-line tools (like `openssl rand -base64 64`).
+3.  **For production:** Store this secret securely using environment variables (e.g., `JWT_SECRET`) or a configuration server. Update the `@Value("${jwt.secret}")` in `JwtTokenProvider` or use `@ConfigurationProperties` if reading from environment variables.
+4.  **For local development:** You can temporarily replace the placeholder in `application.properties` but **do not commit the real secret** to version control.
+
+## Running the Application
+
+1.  **Using Maven:**
+    * Open a terminal/command prompt in the project root directory.
+    * Run: `mvn spring-boot:run`
+2.  **Using IDE:**
+    * Import the project as a Maven project into your IDE (IntelliJ, Eclipse, VSCode).
+    * Locate the `HospitalManagementSystemApplication.java` file.
+    * Run it as a Java Application.
+
+The application will start on `http://localhost:8080` by default.
+
+## Accessing the Application
+
+* **Home Page:** `http://localhost:8080/`
+* **Patient Login:** `http://localhost:8080/patient/login`
+* **Doctor Login:** `http://localhost:8080/doctor/login`
+* **Admin Login:** `http://localhost:8080/admin/login` (Requires JS to call API, store token, redirect)
+* **Swagger UI (API Docs):** `http://localhost:8080/swagger-ui.html`
+
+**Default Admin Credentials:**
+
+* **Email:** `admin@healthcare.com`
+* **Password:** `adminpassword`
+* *(Created by `DataInitializer` on first run if no admin exists. Please change this default password immediately via secure means - currently no UI/API exists for this).*
+
+## API Usage (Postman Example)
+
+1.  **Login:** Send a `POST` request to `/api/auth/{role}/login` (e.g., `/api/auth/admin/login`) with email/password JSON body.
+2.  **Get Token:** Copy the `accessToken` from the JSON response.
+3.  **Authenticated Request:** For subsequent requests to protected API endpoints:
+    * Go to the `Authorization` tab.
+    * Select Type: `Bearer Token`.
+    * Paste the copied token into the `Token` field.
+    * Send your request (e.g., `POST /api/admin/doctors/register` with doctor details in body, requires Admin token).
+
+## Unit Testing
+
+Unit tests are located in `src/test/java`. Run them using:
+```bash
+mvn test

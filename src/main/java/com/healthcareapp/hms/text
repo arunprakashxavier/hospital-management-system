@@ -1,0 +1,194 @@
+{
+  "name": "Dr. Alliya",
+  "age": 53,
+  "qualification": "MD, Cardiology",
+  "specialization": "Cardiology",
+  "phoneNumber": "9080890054",
+  "yearsOfExperience": 13,
+  "email": "doctor.a@clinic.com",
+  "password": "passwordA123"
+}
+
+admin login
+http://localhost:8080/api/auth/admin/login
+{
+  "email": "admin@healthcare.com",
+  "password": "adminpassword"
+}
+
+************************
+dr registration
+http://localhost:8080/api/admin/doctors/register
+{
+  "name": "Dr. Alice Smith",
+  "age": 45,
+  "qualification": "MD, Cardiology",
+  "specialization": "Cardiology",
+  "phoneNumber": "+19876543210",
+  "yearsOfExperience": 15,
+  "email": "alice.smith@clinic.com",
+  "password": "doctorSecurePassword123"
+}
+
+{
+  "name": "Dr. Alliya",
+  "age": 53,
+  "qualification": "MD, Cardiology",
+  "specialization": "Cardiology",
+  "phoneNumber": "9080890054",
+  "yearsOfExperience": 13,
+  "email": "doctor.a@clinic.com",
+  "password": "passwordA123"
+}
+
+{
+  "name": "Dr. Zyana",
+  "age": 39,
+  "qualification": "MD, Cardiology",
+  "specialization": "Cardiology",
+  "phoneNumber": "1234567890",
+  "yearsOfExperience": 13,
+  "email": "doctor.b@clinic.com",
+  "password": "passwordB123"
+}
+
+*******************************************
+DR LOGIN
+
+http://localhost:8080/api/auth/doctor/login
+{
+  "email": "alice.smith@clinic.com",
+  "password": "doctorSecurePassword123"
+}
+
+
+********************************************
+
+to add get/post medicine to patient by dr after dr login only
+http://localhost:8080/api/appointments/7/medications
+
+[
+  {
+    "medicationName": "Lisinopril",
+    "dosage": "10mg",
+    "frequency": "Once daily",
+    "duration": "30 days",
+    "instructions": "Take in the morning"
+  },
+  {
+    "medicationName": "Aspirin",
+    "dosage": "81mg",
+    "frequency": "Once daily",
+    "instructions": "Take with water"
+  }
+]
+
+****************************************
+
+Test: Get Current Patient Profile
+
+Login As: Patient (e.g., patient1@test.com) via POST /api/auth/patient/login -> Get patientToken.
+Request: GET http://localhost:8080/api/profile/patient
+Postman Auth: Bearer Token -> patientToken.
+Expected:
+Status: 200 OK
+Body: JSON object matching PatientProfileDTO structure for the logged-in patient.
+2. Test: Get Current Doctor Profile
+
+Login As: Doctor (e.g., doctorA@test.com) via POST /api/auth/doctor/login -> Get doctorToken.
+Request: GET http://localhost:8080/api/profile/doctor
+Postman Auth: Bearer Token -> doctorToken.
+Expected:
+Status: 200 OK
+Body: JSON object matching DoctorProfileDTO structure for the logged-in doctor.
+3. Test: Update Current Patient Profile
+
+Login As: Patient (e.g., patient1@test.com) -> Get patientToken.
+Request: PUT http://localhost:8080/api/profile/patient
+Postman Auth: Bearer Token -> patientToken.
+Postman Body (raw, JSON): Provide fields allowed in PatientUpdateDTO. Example:
+JSON
+
+{
+  "address": "456 Updated Ave, Anytown",
+  "personalNumber": "+1555987654",
+  "guardianName": "Jane Doe Guardian",
+  "guardianRelation": "Mother",
+  "guardianPhoneNumber": "+1555111222"
+}
+Expected:
+Status: 200 OK
+Body: JSON object matching PatientProfileDTO with the updated details.
+Verify: Check the patients table in your database to confirm the changes were saved.
+4. Test: Update Current Doctor Profile
+
+Login As: Doctor (e.g., doctorA@test.com) -> Get doctorToken.
+Request: PUT http://localhost:8080/api/profile/doctor
+Postman Auth: Bearer Token -> doctorToken.
+Postman Body (raw, JSON): Provide fields allowed in DoctorUpdateDTO. Example:
+JSON
+
+{
+  "phoneNumber": "+1777888999",
+  "yearsOfExperience": 11,
+  "qualification": "MD, PhD, Cardiology"
+}
+Expected:
+Status: 200 OK
+Body: JSON object matching DoctorProfileDTO with the updated details.
+Verify: Check the doctors table in your database.
+5. Test: Change Patient Password
+
+Login As: Patient (e.g., patient1@test.com with current password pat1pass123) -> Get patientToken.
+Request: PUT http://localhost:8080/api/profile/change-password
+Postman Auth: Bearer Token -> patientToken.
+Test Case A (Success):
+Body (raw, JSON):
+JSON
+
+{
+    "currentPassword": "pat1pass123",
+    "newPassword": "newPasswordForPat1",
+    "confirmNewPassword": "newPasswordForPat1"
+}
+Expected: Status 200 OK, Body "Password changed successfully.".
+Verify: Try logging in via /api/auth/patient/login using patient1@test.com and newPasswordForPat1 - it should work. Login with the old password should fail (401).
+Test Case B (Wrong Current Password):
+Body (raw, JSON):
+JSON
+
+{
+    "currentPassword": "WRONG_PASSWORD",
+    "newPassword": "newPasswordForPat1",
+    "confirmNewPassword": "newPasswordForPat1"
+}
+Expected: Status 400 Bad Request. Response body might contain {"message": "Incorrect current password."}.
+Test Case C (New Passwords Mismatch):
+Body (raw, JSON):
+JSON
+
+{
+    "currentPassword": "pat1pass123",
+    "newPassword": "newPasswordForPat1",
+    "confirmNewPassword": "MISMATCHED_PASSWORD"
+}
+Expected: Status 400 Bad Request. Response body might contain {"message": "New passwords do not match."}.
+6. Test: Change Doctor Password
+
+Repeat the structure of Test 5, but log in as a Doctor (e.g., doctorA@test.com, docApass123) and use their token. Test success and failure cases.
+7. Test: Unauthorized Access
+
+Login As: Patient (e.g., patient1@test.com) -> Get patientToken.
+Request: GET http://localhost:8080/api/profile/doctor (Trying to access doctor profile as patient).
+Postman Auth: Bearer Token -> patientToken.
+Expected: Status 403 Forbidden. The response body might be minimal or configured by Spring Security's default AccessDeniedHandler.
+8. Test: Admin Get Profiles by ID
+
+Login As: Admin (admin@healthcare.com) -> Get adminToken.
+Request 1: GET http://localhost:8080/api/profile/patient/{patientId} (Replace {patientId} with the actual ID of patient1@test.com).
+Postman Auth: Bearer Token -> adminToken.
+Expected: Status 200 OK. Body: PatientProfileDTO for Patient 1.
+Request 2: GET http://localhost:8080/api/profile/doctor/{doctorId} (Replace {doctorId} with the actual ID of doctorA@test.com).
+Postman Auth: Bearer Token -> adminToken.
+Expected: Status 200 OK. Body: DoctorProfileDTO for Doctor A.
+******************************************************

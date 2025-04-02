@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title>Doctor Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body {
+      background-color: #e7f5ff; /* Very light blue background */
+      padding-top: 76px; /* Padding for fixed-top navbar */
+    }
+    /* Custom Navbar Style */
+    .navbar-custom {
+      /* Using Bootstrap's primary blue and info blue */
+      background: linear-gradient(45deg, #0d6efd, #0dcaf0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow */
+    }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+      color: #ffffff !important;
+    }
+    .navbar-custom .dropdown-menu { /* Ensure dropdown menu looks good */
+      border-radius: 0.5rem;
+      border: none;
+      box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    .navbar-custom .dropdown-item {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    .navbar-custom .dropdown-item i { /* Style icons in dropdown */
+      margin-right: 0.5rem;
+      color: #6c757d; /* Grey icon color */
+      width: 1.2em; /* Align icons */
+      text-align: center;
+    }
+
+    /* Content Wrapper Styling */
+    .content-wrapper {
+      background-color: #ffffff; /* White background for content */
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1); /* Standard shadow */
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    /* Heading Styling */
+    .content-wrapper h1 {
+      color: #0d6efd; /* Bootstrap primary blue */
+      margin-bottom: 1.5rem;
+    }
+    .content-wrapper h1 i {
+      margin-right: 0.5rem;
+      vertical-align: baseline;
+    }
+    /* Paragraph styling */
+    .content-wrapper p {
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .content-wrapper p strong { /* Make names stand out */
+      color: #0b5ed7; /* Darker blue */
+    }
+
+    /* Button Styling */
+    .btn {
+      transition: all 0.2s ease-in-out;
+      border-radius: 0.375rem; /* Standard Bootstrap radius */
+    }
+    .btn i {
+      margin-right: 0.4rem;
+      vertical-align: text-bottom;
+    }
+    .btn-primary { /* Ensure btn-primary uses standard blue */
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
+    .btn-primary:hover {
+      background-color: #0b5ed7;
+      border-color: #0a58ca;
+    }
+
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" th:href="@{/}">Hospital Management</a>
+    <ul class="navbar-nav ms-auto">
+      <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDoc" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          Welcome, Dr. <span sec:authentication="principal.name">Doctor</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownDoc">
+          <li><a class="dropdown-item" th:href="@{/doctor/profile}"><i class="bi bi-person-circle"></i>My Profile</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <form th:action="@{/logout}" method="post" class="d-inline w-100">
+              <button type="submit" class="dropdown-item w-100"><i class="bi bi-box-arrow-right"></i>Logout</button>
+            </form>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container content-wrapper">
+  <h1><i class="bi bi-speedometer2"></i> Doctor Dashboard</h1>
+  <hr/> <p>Welcome, Dr. <strong sec:authentication="principal.name">Doctor</strong>!</p>
+  <p class="text-muted">(Email: <span sec:authentication="principal.username">doctor@email.com</span> | User Type: <span sec:authentication="principal.userType">DOCTOR</span>)</p>
+
+
+  <p>Manage your appointments and patient interactions here.</p>
+
+  <div class="mt-4"> <a th:href="@{/doctor/appointments}" class="btn btn-primary">
+    <i class="bi bi-calendar-check"></i> View Appointments
+  </a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

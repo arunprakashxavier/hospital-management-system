@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My Medications</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}"> <style>
+    /* --- Theme Styles --- */
+    body {
+        background-color: #ffe6f2; /* Light pink background */
+        padding-top: 76px; /* Padding for fixed-top navbar */
+    }
+    /* Style for the top navbar */
+    .navbar-custom {
+        background: linear-gradient(45deg, #ff85a2, #ff4d79);
+    }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+        color: #ffffff !important;
+    }
+    .navbar-custom .btn-link.nav-link {
+        text-decoration: none;
+        box-shadow: none;
+        background-color: transparent;
+        border: none;
+    }
+    .navbar-custom .btn-link.nav-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Style for the main content wrapper */
+    .content-wrapper {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        background-color: #FFF0F5; /* Very light pink background (LavenderBlush) */
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    /* Style main heading */
+    .content-wrapper h1 {
+        color: #ff4d79; /* Use a theme color for the heading */
+        margin-bottom: 1.5rem;
+    }
+    .content-wrapper h1 i { /* Icon spacing in heading */
+        margin-right: 0.5rem;
+    }
+
+    /* --- Visual Enhancements --- */
+    /* 1. Table Enhancements */
+    thead.table-theme-dark { /* Custom class for themed header */
+        background-color: #ff85a2; /* Pink shade from theme */
+        color: white;
+        vertical-align: middle;
+    }
+    .table tbody td {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+        vertical-align: middle;
+    }
+    .table-hover tbody tr {
+        transition: background-color 0.2s ease-in-out;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(255, 230, 242, 0.6); /* Lighter pink hover on lighter bg */
+    }
+
+    /* 2. Button Enhancements */
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+    .btn i { /* Style for icons within buttons */
+        margin-right: 0.4rem;
+        vertical-align: text-bottom;
+    }
+    .btn .bi-arrow-left-circle-fill { /* Specific icons */
+        font-size: 1.1em;
+    }
+
+    /* 3. Alert message enhancement */
+    .alert { /* Add subtle shadow and icon alignment */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+    }
+    .alert i { /* Icon styling within alerts */
+        margin-right: 0.5rem;
+        font-size: 1.2em;
+    }
+
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/patient/dashboard}">Patient Dashboard</a>
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item" sec:authorize="isAuthenticated()">
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-link nav-link">Logout (<span sec:authentication="principal.username">User</span>)</button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container content-wrapper">
+    <h1><i class="bi bi-prescription2"></i> My Medications</h1>
+    <hr/>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+        <div th:text="${errorMessage}">Error loading medication list.</div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(medications)} and !${errorMessage}" class="text-center p-4 border rounded bg-light">
+        <p class="text-muted fs-5">You have no prescribed medications on record.</p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(medications)}" class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-theme-dark">
+            <tr>
+                <th>Medication Name</th>
+                <th>Dosage</th>
+                <th>Frequency</th>
+                <th>Duration</th>
+                <th>Instructions</th>
+                <th>Prescribed Date</th>
+                <th>Prescribed By</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="med : ${medications}" th:object="${med}">
+                <td th:text="*{medicationName}">Med Name</td>
+                <td th:text="*{dosage}">100mg</td>
+                <td th:text="*{frequency}">Twice Daily</td>
+                <td th:text="*{duration} ?: '-'">7 days</td>
+                <td th:text="*{instructions} ?: '-'">With food</td>
+                <td th:text="${#temporals.format(med.prescribedDate, 'yyyy-MM-dd HH:mm')}">YYYY-MM-DD HH:MM</td>
+                <td th:text="'Dr. ' + *{prescribingDoctorName}">Dr. Name</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4 text-end">
+        <a th:href="@{/patient/dashboard}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left-circle-fill"></i>Back to Dashboard
+        </a>
+    </div>
+</div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

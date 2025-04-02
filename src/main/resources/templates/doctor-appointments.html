@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My Appointments</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}"> <style>
+    /* --- Theme Styles --- */
+    body {
+        background-color: #e7f5ff; /* Very light blue background */
+        padding-top: 76px; /* Padding for fixed-top navbar */
+    }
+    /* Custom Navbar Style */
+    .navbar-custom {
+        background: linear-gradient(45deg, #0d6efd, #0dcaf0); /* Blue gradient */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+        color: #ffffff !important;
+    }
+    .navbar-custom .dropdown-menu {
+        border-radius: 0.5rem; border: none; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    .navbar-custom .dropdown-item { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .navbar-custom .dropdown-item i { margin-right: 0.5rem; color: #6c757d; width: 1.2em; text-align: center; }
+    .navbar-custom .btn-link.nav-link { text-decoration: none; box-shadow: none; background-color: transparent; border: none;}
+    .navbar-custom .btn-link.nav-link:hover { text-decoration: underline; }
+
+
+    /* Content Wrapper Styling */
+    .content-wrapper {
+        background-color: #ffffff; /* White background for content */
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    /* Heading Styling */
+    .content-wrapper h1 {
+        color: #0d6efd; /* Bootstrap primary blue */
+        margin-bottom: 1.5rem;
+    }
+    .content-wrapper h1 i {
+        margin-right: 0.5rem;
+        vertical-align: baseline;
+    }
+
+    /* --- Status Badge Styles (Copied from original) --- */
+    .status-badge { padding: 0.35em 0.65em; font-size: .75em; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.375rem; }
+    .status-pending { background-color: #ffc107; color: #000; } /* Yellow */
+    .status-scheduled { background-color: #0d6efd; color: #fff; } /* Blue */
+    .status-completed { background-color: #198754; color: #fff; } /* Green */
+    .status-cancelled { background-color: #6c757d; color: #fff; } /* Gray */
+    .status-rejected { background-color: #dc3545; color: #fff; } /* Red */
+    .status-no_show { background-color: #fd7e14; color: #fff; } /* Orange */
+
+    /* --- Visual Enhancements --- */
+    /* 1. Table Enhancements */
+    thead.table-theme-dark {
+        background-color: #0d6efd; /* Primary blue header */
+        color: white;
+        vertical-align: middle;
+    }
+    .table tbody td {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+        vertical-align: middle;
+    }
+    .table-hover tbody tr {
+        transition: background-color 0.2s ease-in-out;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.08); /* Light blue hover */
+    }
+    /* Spacing for buttons within table */
+    .table .btn-group .btn {
+        margin-right: 3px; /* Add small gap between buttons */
+        border-radius: 0.25rem !important; /* Ensure individual radius */
+    }
+    .table .btn-group .btn:last-child {
+        margin-right: 0;
+    }
+
+    /* 2. Button Enhancements */
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+    .btn i {
+        margin-right: 0.4rem;
+        vertical-align: text-bottom; /* Or middle */
+    }
+    .btn-sm i { font-size: 0.9em; margin-right: 0.25rem;} /* Adjust icon size in small buttons */
+    .btn .bi-arrow-left-circle-fill, .btn .bi-check-lg, .btn .bi-x-lg,
+    .btn .bi-check2-circle, .btn .bi-calendar-x, .btn .bi-plus-circle-fill,
+    .btn .bi-save-fill, .btn .bi-x-circle, .btn .bi-trash3-fill {
+        font-size: 1.1em; /* Ensure icons are reasonably sized */
+    }
+    /* Ensure outline button icon color is visible */
+    .btn-outline-success i { color: inherit; }
+
+
+    /* 3. Alert message enhancement */
+    .alert {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: flex; align-items: center;
+    }
+    .alert i { margin-right: 0.5rem; font-size: 1.2em; }
+
+    /* 4. Modal Theming */
+    .modal-header {
+        background-color: #0dcaf0; /* Light info blue header */
+        color: white;
+    }
+    .modal-header .btn-close { filter: brightness(0) invert(1); }
+    .modal-title i { margin-right: 0.5rem; }
+    /* Medication row styling */
+    .med-row { background-color: #f8f9fa; padding: 10px; border-radius: 5px; }
+    .med-row .btn-danger i { margin-right: 0; } /* No margin for small trash icon */
+    .med-row .form-control-sm { font-size: 0.875rem; } /* Ensure sm inputs */
+
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/doctor/dashboard}">Doctor Dashboard</a>
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDoc" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Welcome, Dr. <span sec:authentication="principal.name">Doctor</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownDoc">
+                    <li><a class="dropdown-item" th:href="@{/doctor/profile}"><i class="bi bi-person-circle"></i>My Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="d-inline w-100">
+                            <button type="submit" class="dropdown-item w-100"><i class="bi bi-box-arrow-right"></i>Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container content-wrapper">
+    <h1><i class="bi bi-clipboard-data"></i> My Appointments</h1>
+    <hr/>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+        <div th:text="${errorMessage}">Error loading appointments.</div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(appointments)} and !${errorMessage}" class="text-center p-4 border rounded bg-light">
+        <p class="text-muted fs-5">You currently have no appointments scheduled or pending.</p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(appointments)}" class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-theme-dark">
+            <tr>
+                <th>Patient Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="appt : ${appointments}" th:object="${appt}">
+                <td th:text="*{patientName}">Patient Name</td>
+                <td th:text="${#temporals.format(appt.appointmentDateTime, 'yyyy-MM-dd')}">YYYY-MM-DD</td>
+                <td th:text="${#temporals.format(appt.appointmentDateTime, 'hh:mm a')}">HH:MM AM/PM</td>
+                <td th:text="*{reason}">Reason for visit</td>
+                <td>
+                    <span class="status-badge"
+                          th:text="*{status}"
+                          th:classappend="'status-' + ${#strings.toLowerCase(appt.status.name())}">
+                        STATUS
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button th:if="*{status.name() == 'PENDING'}" type="button" class="btn btn-success btn-sm" th:attr="data-appt-id=*{id}" onclick="handleApprove(this.getAttribute('data-appt-id'))"><i class="bi bi-check-lg"></i> Approve</button>
+                        <button th:if="*{status.name() == 'PENDING'}" type="button" class="btn btn-danger btn-sm" th:attr="data-appt-id=*{id}" onclick="handleReject(this.getAttribute('data-appt-id'))"><i class="bi bi-x-lg"></i> Reject</button>
+
+                        <button th:if="*{status.name() == 'SCHEDULED'}" type="button" class="btn btn-info btn-sm" th:attr="data-appt-id=*{id},data-patient-name=*{patientName}" onclick="handleComplete(this)"><i class="bi bi-check2-circle"></i> Complete</button>
+
+                        <button th:if="*{status.name() == 'PENDING' or status.name() == 'SCHEDULED'}" type="button" class="btn btn-warning btn-sm" th:attr="data-appt-id=*{id}" onclick="handleCancel(this.getAttribute('data-appt-id'))"><i class="bi bi-calendar-x"></i> Cancel</button>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-4 text-end">
+        <a th:href="@{/doctor/dashboard}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle-fill"></i> Back to Dashboard</a>
+    </div>
+</div> <div class="modal fade" id="medicationModal" tabindex="-1" aria-labelledby="medicationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="medicationModalLabel"><i class="bi bi-prescription2"></i> Assign Medications</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Appointment for: <strong id="medsPatientName"></strong></p>
+                <input type="hidden" id="medsAppointmentId">
+                <div id="medsMessageArea" class="alert d-none" role="alert"></div>
+
+                <hr>
+                <h5>Medications:</h5>
+                <div id="medicationRowsContainer">
+                </div>
+                <button type="button" class="btn btn-outline-success btn-sm mt-2" id="addMedicationRowBtn"><i class="bi bi-plus-circle-fill"></i> Add Medication</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Skip / Close</button>
+                <button type="button" class="btn btn-primary" id="saveMedicationsBtn"><i class="bi bi-save-fill"></i> Save Medications</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    // --- Message Area Setup ---
+    const actionMessageDiv = document.createElement('div');
+    actionMessageDiv.classList.add('alert', 'd-none', 'mt-3');
+    actionMessageDiv.setAttribute('role', 'alert');
+    const container = document.querySelector('.content-wrapper'); // Adjusted selector
+    const firstHr = container ? container.querySelector('hr') : null;
+    if (container && firstHr) {
+        firstHr.parentNode.insertBefore(actionMessageDiv, firstHr.nextSibling);
+    } else if (container) {
+        container.insertBefore(actionMessageDiv, container.firstChild);
+    }
+
+    const showActionMessage = (message, type = 'danger') => {
+        actionMessageDiv.textContent = message;
+        actionMessageDiv.className = `alert alert-${type} mt-3 d-flex align-items-center`; // Add flex for icon
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+        actionMessageDiv.innerHTML = `<i class="bi ${iconClass} flex-shrink-0 me-2"></i> <div>${message}</div>`; // Add icon structure
+        actionMessageDiv.classList.remove('d-none');
+        setTimeout(() => { actionMessageDiv.classList.add('d-none'); }, 5000);
+    };
+    const hideActionMessage = () => {
+        actionMessageDiv.classList.add('d-none');
+    };
+
+    // --- Modal Setup ---
+    const medicationModalElement = document.getElementById('medicationModal');
+    const medicationModal = new bootstrap.Modal(medicationModalElement);
+    const medsAppointmentIdInput = document.getElementById('medsAppointmentId');
+    const medsPatientNameSpan = document.getElementById('medsPatientName');
+    const medsMessageArea = document.getElementById('medsMessageArea');
+    const medicationRowsContainer = document.getElementById('medicationRowsContainer');
+    const addMedicationRowBtn = document.getElementById('addMedicationRowBtn');
+    const saveMedicationsBtn = document.getElementById('saveMedicationsBtn');
+
+    const showModalMessage = (message, type = 'danger') => {
+        medsMessageArea.textContent = message;
+        medsMessageArea.className = `alert alert-${type} d-flex align-items-center`; // Add flex for icon
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : (type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-x-octagon-fill');
+        medsMessageArea.innerHTML = `<i class="bi ${iconClass} flex-shrink-0 me-2"></i> <div>${message}</div>`; // Add icon structure
+        medsMessageArea.classList.remove('d-none');
+    };
+    const hideModalMessage = () => {
+        medsMessageArea.classList.add('d-none');
+    };
+
+    // --- Generic Status Update (Unchanged) ---
+    async function updateAppointmentStatus(appointmentId, action, data = null) {
+        hideActionMessage();
+        hideModalMessage();
+
+        const clickedButton = event ? event.target.closest('button') : null; // Use closest
+        if (clickedButton) clickedButton.disabled = true;
+
+        const url = `/api/appointments/${appointmentId}/${action}`;
+        let options = { method: 'PUT', headers: {} };
+
+        if (data) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(data);
+        }
+
+        try {
+            const response = await fetch(url, options);
+            if (response.ok) {
+                const actionDisplay = action.charAt(0).toUpperCase() + action.slice(1);
+                showActionMessage(`Appointment ${appointmentId} successfully ${actionDisplay}${action === 'complete' ? 'd' : 'ed'}.`, 'success');
+                if (action === 'complete') {
+                    const patientName = clickedButton ? clickedButton.dataset.patientName : 'Patient';
+                    openMedicationModal(appointmentId, patientName);
+                } else {
+                    setTimeout(() => { window.location.reload(); }, 1500);
+                }
+            } else {
+                let errorMsg = `Failed to ${action} appointment: ${response.statusText}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (e) {/* Ignore */}
+                showActionMessage(errorMsg, 'danger');
+                console.error(`Failed to ${action} appointment ${appointmentId}:`, response.status, response.statusText);
+                if (clickedButton) clickedButton.disabled = false;
+            }
+        } catch (error) {
+            showActionMessage(`An network error occurred: ${error.message}`, 'danger');
+            console.error(`Error during ${action} action for appointment ${appointmentId}:`, error);
+            if (clickedButton) clickedButton.disabled = false;
+        }
+    }
+
+    // --- Action Handlers (Unchanged) ---
+    function handleApprove(appointmentId) { if (confirm(`Approve appointment ${appointmentId}?`)) { updateAppointmentStatus(appointmentId, 'approve'); } else { const btn = document.querySelector(`button[data-appt-id='${appointmentId}'][onclick^='handleApprove']`); if(btn) btn.disabled = false;} }
+    function handleReject(appointmentId) { if (confirm(`Reject appointment ${appointmentId}?`)) { updateAppointmentStatus(appointmentId, 'reject'); } else { const btn = document.querySelector(`button[data-appt-id='${appointmentId}'][onclick^='handleReject']`); if(btn) btn.disabled = false;}}
+    function handleCancel(appointmentId) { if (confirm(`Cancel appointment ${appointmentId}? This may notify the patient.`)) { updateAppointmentStatus(appointmentId, 'cancel'); } else { const btn = document.querySelector(`button[data-appt-id='${appointmentId}'][onclick^='handleCancel']`); if(btn) btn.disabled = false;}}
+    function handleComplete(buttonElement) {
+        const appointmentId = buttonElement.getAttribute('data-appt-id');
+        const notes = prompt(`Enter notes for completing appointment ${appointmentId}:`, "");
+        if (notes !== null) {
+            buttonElement.disabled = true; // Disable button immediately
+            updateAppointmentStatus(appointmentId, 'complete', { doctorNotes: notes });
+        } else {
+            buttonElement.disabled = false; // Re-enable if prompt cancelled
+        }
+    }
+
+
+    // --- Medication Modal Logic (Unchanged) ---
+    function openMedicationModal(appointmentId, patientName) {
+        hideActionMessage();
+        hideModalMessage();
+        medsAppointmentIdInput.value = appointmentId;
+        medsPatientNameSpan.textContent = patientName || 'N/A';
+        medicationRowsContainer.innerHTML = '';
+        addNewMedicationRow();
+        medicationModal.show();
+    }
+
+    function createMedicationRowHtml() {
+        return `
+                <div class="row g-2 mb-2 align-items-center med-row">
+                    <div class="col-md">
+                        <input type="text" class="form-control form-control-sm med-name" placeholder="Medication Name" required>
+                    </div>
+                    <div class="col-md">
+                        <input type="text" class="form-control form-control-sm med-dosage" placeholder="Dosage (e.g., 10mg)" required>
+                    </div>
+                    <div class="col-md">
+                        <input type="text" class="form-control form-control-sm med-frequency" placeholder="Frequency (e.g., Twice daily)" required>
+                    </div>
+                    <div class="col-md">
+                        <input type="text" class="form-control form-control-sm med-duration" placeholder="Duration (Optional)">
+                    </div>
+                    <div class="col-md">
+                        <input type="text" class="form-control form-control-sm med-instructions" placeholder="Instructions (Optional)">
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger btn-sm remove-med-row p-1 lh-1"><i class="bi bi-trash3-fill"></i></button> </div>
+                </div>
+            `;
+    }
+
+    function addNewMedicationRow() {
+        medicationRowsContainer.insertAdjacentHTML('beforeend', createMedicationRowHtml());
+    }
+
+    addMedicationRowBtn.addEventListener('click', addNewMedicationRow);
+
+    medicationRowsContainer.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('.remove-med-row'); // Target button or icon inside it
+        if (removeButton) {
+            if (medicationRowsContainer.querySelectorAll('.med-row').length > 1) {
+                removeButton.closest('.med-row').remove();
+            } else {
+                showModalMessage("Cannot remove the last medication row.", "warning");
+            }
+        }
+    });
+
+    saveMedicationsBtn.addEventListener('click', async () => {
+        hideModalMessage();
+        const appointmentId = medsAppointmentIdInput.value;
+        if (!appointmentId) { showModalMessage("Error: Appointment ID is missing.", "danger"); return; }
+
+        const medicationInputs = [];
+        const rows = medicationRowsContainer.querySelectorAll('.med-row');
+        let hasValidationError = false;
+
+        rows.forEach(row => {
+            const nameInput = row.querySelector('.med-name');
+            const dosageInput = row.querySelector('.med-dosage');
+            const frequencyInput = row.querySelector('.med-frequency');
+            const durationInput = row.querySelector('.med-duration');
+            const instructionsInput = row.querySelector('.med-instructions');
+
+            const name = nameInput.value.trim();
+            const dosage = dosageInput.value.trim();
+            const frequency = frequencyInput.value.trim();
+
+            // Simplified validation: only proceed if name, dosage, AND frequency are filled
+            if (name && dosage && frequency) {
+                // Clear validation styles
+                nameInput.classList.remove('is-invalid');
+                dosageInput.classList.remove('is-invalid');
+                frequencyInput.classList.remove('is-invalid');
+
+                medicationInputs.push({
+                    medicationName: name, dosage: dosage, frequency: frequency,
+                    duration: durationInput.value.trim() || null,
+                    instructions: instructionsInput.value.trim() || null
+                });
+            } else if (name || dosage || frequency) { // Only flag error if row partially filled
+                hasValidationError = true;
+                nameInput.classList.toggle('is-invalid', !name);
+                dosageInput.classList.toggle('is-invalid', !dosage);
+                frequencyInput.classList.toggle('is-invalid', !frequency);
+            } else {
+                // Clear validation styles if row is completely empty (might be removed later)
+                nameInput.classList.remove('is-invalid');
+                dosageInput.classList.remove('is-invalid');
+                frequencyInput.classList.remove('is-invalid');
+            }
+        });
+
+        if (hasValidationError) {
+            showModalMessage("Please fill in required medication fields (Name, Dosage, Frequency) for all entered rows.", "warning");
+            return;
+        }
+        if (medicationInputs.length === 0 && medicationRowsContainer.querySelectorAll('.med-row').length > 0) {
+            // Check if there are rows but none validated (all empty or partially filled without essentials)
+            if (!hasValidationError) { // Only show this if no specific validation error shown
+                showModalMessage("No complete medication entries to save.", "info");
+            }
+            return;
+        }
+        if (medicationInputs.length === 0 && medicationRowsContainer.querySelectorAll('.med-row').length === 0) {
+            // Case where user deleted all rows after opening modal
+            showModalMessage("No medications entered.", "info");
+            // Consider this same as skipping/closing
+            medicationModal.hide();
+            window.location.reload(); // Reload main page if skipping
+            return;
+        }
+
+        saveMedicationsBtn.disabled = true;
+        saveMedicationsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+        try {
+            const response = await fetch(`/api/appointments/${appointmentId}/medications`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(medicationInputs) });
+            if (response.ok) {
+                showModalMessage("Medications saved successfully! Reloading page...", "success");
+                setTimeout(() => { medicationModal.hide(); window.location.reload(); }, 1500);
+            } else {
+                let errorMsg = `Failed to save medications: ${response.statusText}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (e) {/* Ignore */}
+                showModalMessage(errorMsg, 'danger');
+                saveMedicationsBtn.disabled = false;
+                saveMedicationsBtn.innerHTML = '<i class="bi bi-save-fill"></i> Save Medications'; // Restore icon
+            }
+        } catch (error) {
+            showModalMessage(`An network error occurred: ${error.message}`, 'danger');
+            console.error(`Error saving medications for appointment ${appointmentId}:`, error);
+            saveMedicationsBtn.disabled = false;
+            saveMedicationsBtn.innerHTML = '<i class="bi bi-save-fill"></i> Save Medications'; // Restore icon
+        }
+    });
+
+
+    /*]]>*/
+</script>
+</body>
+</html>

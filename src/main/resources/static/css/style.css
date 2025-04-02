@@ -1,0 +1,14 @@
+body {
+    padding-top: 20px; /* Add some padding at the top */
+    background-color: #f8f9fa; /* Light gray background */
+}
+
+.card {
+    border: none; /* Remove default card border */
+}
+
+.card-header {
+    font-weight: bold;
+}
+
+/* Add more custom styles as needed */

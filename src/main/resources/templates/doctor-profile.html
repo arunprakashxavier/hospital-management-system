@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}"> <style>
+    /* --- Theme Styles --- */
+    body {
+        background-color: #e7f5ff; /* Very light blue background */
+        padding-top: 76px; /* Padding for fixed-top navbar */
+    }
+    /* Custom Navbar Style */
+    .navbar-custom {
+        background: linear-gradient(45deg, #0d6efd, #0dcaf0); /* Blue gradient */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+        color: #ffffff !important;
+    }
+    .navbar-custom .dropdown-menu {
+        border-radius: 0.5rem; border: none; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    .navbar-custom .dropdown-item { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .navbar-custom .dropdown-item i { margin-right: 0.5rem; color: #6c757d; width: 1.2em; text-align: center; }
+    .navbar-custom .btn-link.nav-link { text-decoration: none; box-shadow: none; background-color: transparent; border: none;}
+    .navbar-custom .btn-link.nav-link:hover { text-decoration: underline; }
+
+    /* Content Wrapper Styling */
+    .content-wrapper {
+        background-color: #ffffff; /* White background for content */
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    /* Heading Styling */
+    .content-wrapper h1 {
+        color: #0d6efd; /* Bootstrap primary blue */
+        margin-bottom: 1.5rem;
+    }
+    .content-wrapper h1 i {
+        margin-right: 0.5rem;
+        vertical-align: baseline;
+    }
+
+    /* --- Visual Enhancements --- */
+    /* 1. Description List (Profile Details) Styling */
+    dl.row dt {
+        font-weight: bold;
+        color: #0b5ed7; /* Darker blue for definition terms */
+    }
+    dl.row dt, dl.row dd {
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid #e7f5ff; /* Light blue separator */
+        vertical-align: middle;
+    }
+    dl.row dd:last-of-type {
+        border-bottom: none; /* Remove border from last item */
+    }
+
+    /* 2. Button Enhancements */
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+    .btn i {
+        margin-right: 0.4rem;
+        vertical-align: text-bottom;
+    }
+    /* Specific icon sizing */
+    .btn .bi-arrow-left-circle-fill, .btn .bi-pencil-square, .btn .bi-key-fill,
+    .btn .bi-check-lg, .btn .bi-x-lg {
+        font-size: 1.1em;
+    }
+    /* Themed button colors (using Bootstrap defaults mostly) */
+    .btn-primary { background-color: #0d6efd; border-color: #0d6efd; }
+    .btn-primary:hover { background-color: #0b5ed7; border-color: #0a58ca; }
+    /* Keep warning yellow */
+    /* Keep secondary grey */
+
+
+    /* 3. Alert message enhancement */
+    .alert {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: flex; align-items: center;
+    }
+    .alert i { margin-right: 0.5rem; font-size: 1.2em; }
+    .alert > div { display: inline-block; vertical-align: middle; }
+
+
+    /* 4. Modal Theming */
+    .modal-header {
+        background-color: #0dcaf0; /* Light info blue header */
+        color: white;
+    }
+    .modal-header .btn-close { filter: brightness(0) invert(1); }
+    .modal-title i { margin-right: 0.5rem; }
+    /* Themed modal footer buttons */
+    .modal-footer .btn-primary { background-color: #0d6efd; border-color: #0d6efd; }
+    .modal-footer .btn-primary:hover { background-color: #0b5ed7; border-color: #0a58ca; }
+    /* Keep warning yellow, secondary grey */
+
+
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/doctor/dashboard}">Doctor Dashboard</a>
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDoc" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Welcome, Dr. <span sec:authentication="principal.name">Doctor</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownDoc">
+                    <li><a class="dropdown-item" th:href="@{/doctor/profile}"><i class="bi bi-person-circle"></i>My Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="d-inline w-100">
+                            <button type="submit" class="dropdown-item w-100"><i class="bi bi-box-arrow-right"></i>Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container content-wrapper">
+    <h1><i class="bi bi-person-video3"></i> My Profile</h1>
+    <hr/>
+
+    <div id="profileMessageArea" class="alert d-none mt-3" role="alert"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+        <div th:text="${errorMessage}">Error loading profile.</div>
+    </div>
+
+    <div th:if="${doctorProfile != null and errorMessage == null}" th:object="${doctorProfile}">
+        <dl class="row mt-3">
+            <dt class="col-sm-3">Doctor ID</dt>
+            <dd class="col-sm-9" th:text="*{id}">N/A</dd>
+
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9" th:text="*{name}">N/A</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9" th:text="*{email}">N/A</dd>
+
+            <dt class="col-sm-3">Age</dt>
+            <dd class="col-sm-9" th:text="*{age}">N/A</dd>
+
+            <dt class="col-sm-3">Specialization</dt>
+            <dd class="col-sm-9" th:text="*{specialization}">N/A</dd>
+
+            <dt class="col-sm-3">Qualification</dt>
+            <dd class="col-sm-9" th:text="*{qualification}">N/A</dd>
+
+            <dt class="col-sm-3">Years of Experience</dt>
+            <dd class="col-sm-9" th:text="*{yearsOfExperience}">N/A</dd>
+
+            <dt class="col-sm-3">Phone Number</dt>
+            <dd class="col-sm-9" th:text="*{phoneNumber}">N/A</dd>
+
+            <dt class="col-sm-3">Registered On</dt>
+            <dd class="col-sm-9" th:text="*{createdAt != null ? #temporals.format(createdAt, 'yyyy-MM-dd HH:mm') : 'N/A'}">YYYY-MM-DD HH:MM</dd>
+        </dl>
+
+        <hr/>
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editDoctorProfileModal">
+                <i class="bi bi-pencil-square"></i> Edit Profile
+            </button>
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changeDoctorPasswordModal">
+                <i class="bi bi-key-fill"></i> Change Password
+            </button>
+        </div>
+    </div>
+
+    <div class="mt-4 text-end">
+        <a th:href="@{/doctor/dashboard}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left-circle-fill"></i> Back to Dashboard
+        </a>
+    </div>
+</div> <div class="modal fade" id="editDoctorProfileModal" tabindex="-1" aria-labelledby="editDoctorProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="editDoctorProfileModalLabel"><i class="bi bi-pencil-square"></i> Edit Profile</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="editProfileMessageArea" class="alert d-none" role="alert"></div>
+                <form id="editDoctorProfileForm">
+                    <div class="mb-3">
+                        <label for="editPhoneNumber" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="editPhoneNumber" name="phoneNumber" required pattern="^\+?[0-9. ()-]{7,25}$">
+                        <div class="invalid-feedback">Please enter a valid phone number.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editYearsOfExperience" class="form-label">Years of Experience</label>
+                        <input type="number" class="form-control" id="editYearsOfExperience" name="yearsOfExperience" required min="0">
+                        <div class="invalid-feedback">Please enter valid years of experience (0 or more).</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editQualification" class="form-label">Qualification</label>
+                        <input type="text" class="form-control" id="editQualification" name="qualification" required maxlength="200">
+                        <div class="invalid-feedback">Qualification cannot be blank.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i> Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveDoctorProfileBtn"><i class="bi bi-check-lg"></i> Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="changeDoctorPasswordModal" tabindex="-1" aria-labelledby="changeDoctorPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="changeDoctorPasswordModalLabel"><i class="bi bi-key-fill"></i> Change Password</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="changePasswordMessageArea" class="alert d-none" role="alert"></div>
+                <form id="changeDoctorPasswordForm">
+                    <div class="mb-3">
+                        <label for="currentPasswordDoc" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPasswordDoc" name="currentPassword" required>
+                        <div class="invalid-feedback">Current password is required.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPasswordDoc" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPasswordDoc" name="newPassword" required minlength="8">
+                        <div class="invalid-feedback">New password must be at least 8 characters.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmNewPasswordDoc" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmNewPasswordDoc" name="confirmNewPassword" required minlength="8">
+                        <div class="invalid-feedback">Please confirm your new password.</div>
+                        <div id="passwordMatchErrorDoc" class="text-danger d-none mt-1">New passwords do not match.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i> Cancel</button>
+                <button type="button" class="btn btn-warning" id="changeDoctorPasswordBtn"><i class="bi bi-check-lg"></i> Change Password</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    // --- Get Profile Data ---
+    const currentDoctorProfileData = /*[[${doctorProfile != null && errorMessage == null ? doctorProfile : null}]]*/ null;
+
+    // --- Modal References ---
+    const editDoctorProfileModalElement = document.getElementById('editDoctorProfileModal');
+    const editDoctorProfileModal = new bootstrap.Modal(editDoctorProfileModalElement);
+    const editDoctorProfileForm = document.getElementById('editDoctorProfileForm');
+    const editProfileMessageArea = document.getElementById('editProfileMessageArea');
+    const saveDoctorProfileBtn = document.getElementById('saveDoctorProfileBtn');
+
+    const changeDoctorPasswordModalElement = document.getElementById('changeDoctorPasswordModal');
+    const changeDoctorPasswordModal = new bootstrap.Modal(changeDoctorPasswordModalElement);
+    const changeDoctorPasswordForm = document.getElementById('changeDoctorPasswordForm');
+    const changePasswordMessageArea = document.getElementById('changePasswordMessageArea');
+    const changeDoctorPasswordBtn = document.getElementById('changeDoctorPasswordBtn');
+    const passwordMatchErrorDivDoc = document.getElementById('passwordMatchErrorDoc');
+
+    // --- Main Page Message Area ---
+    const profileMessageArea = document.getElementById('profileMessageArea');
+    const showProfileMessage = (message, type = 'danger') => {
+        profileMessageArea.textContent = message;
+        profileMessageArea.className = `alert alert-${type} mt-3 d-flex align-items-center`; // Add flex
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+        profileMessageArea.innerHTML = `<i class="bi ${iconClass} flex-shrink-0 me-2"></i> <div>${message}</div>`; // Add icon structure
+        profileMessageArea.classList.remove('d-none');
+        setTimeout(() => { profileMessageArea.classList.add('d-none'); }, 5000);
+    };
+
+    // --- Modal Message Helpers ---
+    const showModalMessage = (message, type = 'danger', areaElement) => {
+        areaElement.textContent = message;
+        areaElement.className = `alert alert-${type} d-flex align-items-center`; // Add flex
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : (type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-x-octagon-fill');
+        areaElement.innerHTML = `<i class="bi ${iconClass} flex-shrink-0 me-2"></i> <div>${message}</div>`; // Add icon structure
+        areaElement.classList.remove('d-none');
+    };
+    const hideModalMessage = (areaElement) => {
+        areaElement.classList.add('d-none');
+        areaElement.className = 'alert d-none';
+    };
+
+    // --- Edit Profile Modal Logic (Unchanged) ---
+    editDoctorProfileModalElement.addEventListener('show.bs.modal', event => {
+        hideModalMessage(editProfileMessageArea);
+        if (currentDoctorProfileData) {
+            editDoctorProfileForm.elements['phoneNumber'].value = currentDoctorProfileData.phoneNumber || '';
+            editDoctorProfileForm.elements['yearsOfExperience'].value = currentDoctorProfileData.yearsOfExperience !== null ? currentDoctorProfileData.yearsOfExperience : '';
+            editDoctorProfileForm.elements['qualification'].value = currentDoctorProfileData.qualification || '';
+        }
+        editDoctorProfileForm.classList.remove('was-validated');
+        Array.from(editDoctorProfileForm.querySelectorAll('.is-invalid')).forEach(el => el.classList.remove('is-invalid'));
+    });
+
+    saveDoctorProfileBtn.addEventListener('click', async () => {
+        hideModalMessage(editProfileMessageArea);
+        editDoctorProfileForm.classList.add('was-validated');
+        if (!editDoctorProfileForm.checkValidity()) {
+            showModalMessage("Please correct the errors in the form.", "warning", editProfileMessageArea); return;
+        }
+        const formData = new FormData(editDoctorProfileForm);
+        const updateData = Object.fromEntries(formData.entries());
+        if (updateData.yearsOfExperience) { updateData.yearsOfExperience = parseInt(updateData.yearsOfExperience, 10); }
+        console.log("Updating doctor profile with:", updateData);
+        saveDoctorProfileBtn.disabled = true;
+        saveDoctorProfileBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        try {
+            const response = await fetch('/api/profile/doctor', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updateData) });
+            if (response.ok) {
+                showProfileMessage("Profile updated successfully! Reloading...", "success");
+                editDoctorProfileModal.hide();
+                setTimeout(() => { window.location.reload(); }, 1500);
+            } else {
+                let errorMsg = `Failed to update profile: ${response.statusText}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message || (errorData.errors ? Object.values(errorData.errors).join('; ') : errorMsg); } catch (e) {/* Ignore */}
+                showModalMessage(errorMsg, 'danger', editProfileMessageArea);
+            }
+        } catch (error) {
+            showModalMessage(`An error occurred: ${error.message}`, 'danger', editProfileMessageArea);
+            console.error("Error updating doctor profile:", error);
+        } finally {
+            saveDoctorProfileBtn.disabled = false;
+            saveDoctorProfileBtn.innerHTML = '<i class="bi bi-check-lg"></i> Save Changes'; // Restore icon
+        }
+    });
+
+    // --- Change Password Modal Logic (Unchanged) ---
+    changeDoctorPasswordModalElement.addEventListener('show.bs.modal', event => {
+        hideModalMessage(changePasswordMessageArea);
+        changeDoctorPasswordForm.reset();
+        passwordMatchErrorDivDoc.classList.add('d-none');
+        changeDoctorPasswordForm.classList.remove('was-validated');
+        Array.from(changeDoctorPasswordForm.querySelectorAll('.is-invalid')).forEach(el => el.classList.remove('is-invalid'));
+    });
+
+    const checkDoctorNewPasswordMatch = () => {
+        const newPass = changeDoctorPasswordForm.elements['newPassword'].value;
+        const confirmPass = changeDoctorPasswordForm.elements['confirmNewPassword'].value;
+        if (newPass && confirmPass && newPass !== confirmPass) {
+            passwordMatchErrorDivDoc.classList.remove('d-none');
+            changeDoctorPasswordForm.elements['confirmNewPassword'].setCustomValidity("Passwords do not match"); return false;
+        } else {
+            passwordMatchErrorDivDoc.classList.add('d-none');
+            changeDoctorPasswordForm.elements['confirmNewPassword'].setCustomValidity(""); return true;
+        }
+    };
+    changeDoctorPasswordForm.elements['newPassword'].addEventListener('input', checkDoctorNewPasswordMatch);
+    changeDoctorPasswordForm.elements['confirmNewPassword'].addEventListener('input', checkDoctorNewPasswordMatch);
+
+    changeDoctorPasswordBtn.addEventListener('click', async () => {
+        hideModalMessage(changePasswordMessageArea);
+        changeDoctorPasswordForm.classList.add('was-validated');
+        if (!changeDoctorPasswordForm.checkValidity() || !checkDoctorNewPasswordMatch()) {
+            showModalMessage("Please correct the errors in the form.", "warning", changePasswordMessageArea); return;
+        }
+        const formData = new FormData(changeDoctorPasswordForm);
+        const passwordData = Object.fromEntries(formData.entries());
+        console.log("Changing doctor password...");
+        changeDoctorPasswordBtn.disabled = true;
+        changeDoctorPasswordBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Changing...';
+        try {
+            const response = await fetch('/api/profile/change-password', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(passwordData) });
+            if (response.ok) {
+                showProfileMessage("Password changed successfully!", "success");
+                changeDoctorPasswordModal.hide();
+            } else {
+                let errorMsg = `Failed to change password: ${response.statusText}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message || (errorData.errors ? Object.values(errorData.errors).join('; ') : errorMsg); } catch (e) {/* Ignore */}
+                showModalMessage(errorMsg, 'danger', changePasswordMessageArea);
+            }
+        } catch (error) {
+            showModalMessage(`An error occurred: ${error.message}`, 'danger', changePasswordMessageArea);
+            console.error("Error changing doctor password:", error);
+        } finally {
+            changeDoctorPasswordBtn.disabled = false;
+            changeDoctorPasswordBtn.innerHTML = '<i class="bi bi-check-lg"></i> Change Password'; // Restore icon
+        }
+    });
+
+    /*]]>*/
+</script>
+</body>
+</html>
